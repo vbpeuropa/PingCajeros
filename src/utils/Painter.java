@@ -7,16 +7,21 @@ import javax.swing.JProgressBar;
  * @author U029903
  *
  */
-public class Painter implements Runnable {
-	public JProgressBar jProgressBar1;
+public class Painter extends Thread {
+	public JProgressBar jProgressBar;
 
-	public void run() {
-		while (true) {
+	public Painter(JProgressBar jProgressBar) {
+		this.jProgressBar = jProgressBar;
+	}
+
+	@Override
+	public synchronized void run() {
+		while (jProgressBar.getValue() <100) {
 			try {
-				Thread.sleep(50);
-				jProgressBar1.repaint();
+				sleep(50);
+				jProgressBar.repaint();
 			} catch (InterruptedException ex) {
-				break;
+				ex.printStackTrace();
 			}
 		}
 	}

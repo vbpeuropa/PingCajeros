@@ -8,6 +8,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.ButtonGroup;
@@ -36,36 +38,44 @@ import utils.Worker;
 public class InterfazPing extends JFrame implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
-	public JLabel labelCajero;
-	public JTextField inputURLCajeros;
-	public JLabel labelURLSalida;
-	public JTextField inputURLSalida;
-	public JLabel labelPingTime;
-	public JFormattedTextField PingTime;
-	public JTextArea display;
-	public JScrollPane scrollPanel;
-	public JRadioButton radioTxt;
-	public JRadioButton radioBBDD;
-	public JRadioButton radioFichero;
-	public JRadioButton radioPing;
-	public JRadioButton radioInformacion;
-	public JCheckBox checkApagados;
-	public JCheckBox checkEncendidos;
-	public ButtonGroup grupoCarga;
-	public ButtonGroup radioGrupo;
-	public JButton botonStart;
-	public JButton botonPause;
-	public JButton botonCerrar;
-	public JButton botonImport;
-	public JButton botonExport;
-	public JFileChooser frame;
-	public JPanel panel;
-	public JProgressBar jProgressBar;
-	boolean flagPause;
-	int numeroHilos = 10;
-	BufferedWriter bw;
+	private static final String CABECERA_CSV = "CAJERO;SISTEMA_OPERATIVO;SERVICE_PACK;ARQUITECTURA;PROCESADOR;MEMORIA;FABRICANTE;MODELO;NUMERO_SERIE;PANELOP;LIBRETAS;INGRESADOR;CONTACTLESS;MASTER";
 
-	public InterfazPing() {
+	private JLabel labelCajero;
+	private JTextField inputURLCajeros;
+	private JLabel labelURLSalida;
+	private JTextField inputURLSalida;
+	private JLabel labelPingTime;
+	private JFormattedTextField PingTime;
+	private JTextArea display;
+	private JScrollPane scrollPanel;
+	private JRadioButton radioTxt;
+	private JRadioButton radioBBDD;
+	private JRadioButton radioFichero;
+	private JRadioButton radioPing;
+	private JRadioButton radioInformacion;
+	private JCheckBox checkApagados;
+	private JCheckBox checkEncendidos;
+	private ButtonGroup grupoCarga;
+	private ButtonGroup radioGrupo;
+	private JButton botonStart;
+	private JButton botonPause;
+	private JButton botonCerrar;
+	private JButton botonImport;
+	private JButton botonExport;
+	private JFileChooser frame;
+	private JPanel panel;
+	private JProgressBar jProgressBar;
+	private boolean flagPause;
+	private int numeroHilos = 10;
+	private BufferedWriter bw;
+	
+	public InterfazPing(int x, int y, int width, int height, boolean resizable, boolean visible) {
+		
+		setBounds( x, y, width, height);
+		setResizable(resizable);
+		setVisible(visible);
+		setLocationRelativeTo(null);
+		
 		setLayout(null);
 		setTitle("Inventario de Cajeros");
 
@@ -107,10 +117,10 @@ public class InterfazPing extends JFrame implements ActionListener {
 		add(labelPingTime);
 
 		NumberFormat amountFormat = NumberFormat.getNumberInstance();
-		PingTime = new JFormattedTextField(amountFormat);
-		PingTime.setBounds(10, 130, 295, 20);
-		add(PingTime);
-		PingTime.setText("3000");
+		setPingTime(new JFormattedTextField(amountFormat));
+		getPingTime().setBounds(10, 130, 295, 20);
+		add(getPingTime());
+		getPingTime().setText("3000");
 
 		radioGrupo = new ButtonGroup();
 		radioPing = new JRadioButton("Sólo Ping");
@@ -120,37 +130,37 @@ public class InterfazPing extends JFrame implements ActionListener {
 		radioGrupo.add(radioPing);
 		radioPing.doClick();
 
-		radioFichero = new JRadioButton("Fichero");
-		radioFichero.setBounds(210, 155, 195, 20);
+		setRadioFichero(new JRadioButton("Fichero"));
+		getRadioFichero().setBounds(210, 155, 195, 20);
 
-		radioFichero.addChangeListener(null);
-		add(radioFichero);
-		radioGrupo.add(radioFichero);
+		getRadioFichero().addChangeListener(null);
+		add(getRadioFichero());
+		radioGrupo.add(getRadioFichero());
 
-		radioInformacion = new JRadioButton("Información");
-		radioInformacion.setBounds(100, 155, 100, 20);
-		radioInformacion.addChangeListener(null);
-		add(radioInformacion);
-		radioGrupo.add(radioInformacion);
+		setRadioInformacion(new JRadioButton("Información"));
+		getRadioInformacion().setBounds(100, 155, 100, 20);
+		getRadioInformacion().addChangeListener(null);
+		add(getRadioInformacion());
+		radioGrupo.add(getRadioInformacion());
 
-		checkApagados = new JCheckBox("Apagados");
-		checkApagados.setBounds(10, 175, 90, 20);
-		checkApagados.addChangeListener(null);
-		add(checkApagados);
-		checkApagados.doClick();
+		setCheckApagados(new JCheckBox("Apagados"));
+		getCheckApagados().setBounds(10, 175, 90, 20);
+		getCheckApagados().addChangeListener(null);
+		add(getCheckApagados());
+		getCheckApagados().doClick();
 
-		checkEncendidos = new JCheckBox("Encendidos");
-		checkEncendidos.setBounds(210, 175, 95, 20);
-		checkEncendidos.addChangeListener(null);
-		add(checkEncendidos);
-		checkEncendidos.doClick();
+		setCheckEncendidos(new JCheckBox("Encendidos"));
+		getCheckEncendidos().setBounds(210, 175, 95, 20);
+		getCheckEncendidos().addChangeListener(null);
+		add(getCheckEncendidos());
+		getCheckEncendidos().doClick();
 
 		frame = new JFileChooser();
 
-		botonStart = new JButton("Analizar");
-		botonStart.setBounds(10, 225, 80, 30);
-		add(botonStart);
-		botonStart.addActionListener(this);
+		setBotonStart(new JButton("Analizar"));
+		getBotonStart().setBounds(10, 225, 80, 30);
+		add(getBotonStart());
+		getBotonStart().addActionListener(this);
 
 		botonPause = new JButton("Pausar");
 		botonPause.setBounds(110, 225, 90, 30);
@@ -180,11 +190,11 @@ public class InterfazPing extends JFrame implements ActionListener {
 		add(panel);
 
 		// progressbar
-		jProgressBar = new JProgressBar(0, 100);
-		jProgressBar.setBounds(12, 200, 290, 20);
-		jProgressBar.setValue(0);
-		jProgressBar.setStringPainted(true);
-		add(jProgressBar);
+		setjProgressBar(new JProgressBar(0, 100));
+		getjProgressBar().setBounds(12, 200, 290, 20);
+		getjProgressBar().setValue(0);
+		getjProgressBar().setStringPainted(true);
+		add(getjProgressBar());
 
 		display = new JTextArea(14, 24);
 
@@ -193,50 +203,51 @@ public class InterfazPing extends JFrame implements ActionListener {
 		panel.add(scrollPanel);
 	}
 	
+	
+	
 	public void actionPerformed(ActionEvent evento) {
-		
-		String URLCajeros = inputURLCajeros.getText();
-		String URLFinal = "" + inputURLSalida.getText() + java.time.LocalDateTime.now().getMonth() + "-"
-				+ java.time.LocalDateTime.now().getDayOfMonth() + " "
-				+ java.time.LocalDateTime.now().getHour() + "-" + java.time.LocalDateTime.now().getMinute()
+		LocalDateTime date = java.time.LocalDateTime.now();
+		String urlCajeros = inputURLCajeros.getText();
+		String urlFinal = "" + inputURLSalida.getText() + date.getMonth() + "-"
+				+ date.getDayOfMonth() + " "
+				+ date.getHour() + "-" + date.getMinute()
 				+ ".csv";
-		Painter p = new Painter();
-		p.jProgressBar1 = jProgressBar;
+		
 		//Creamos hilo para la barra de progreso
-		new Thread(p);
-		List<Cajero> cajerosInt = null;
+		new Painter(getjProgressBar()).run();
+		
 		try {
-			if (evento.getSource() == botonStart) {
-					//este bw se queda abierto?
-					bw = new BufferedWriter(new FileWriter(URLFinal));
-				//	bw.write("CAJERO;SISTEMA_OPERATIVO;SERVICE_PACK;ARQUITECTURA;PROCESADOR;MEMORIA;FABRICANTE;MODELO;PANELOP;LIBRETAS;INGRESADOR;CONTACTLESS;MASTER\n");
-				bw.write("CAJERO;SISTEMA_OPERATIVO;SERVICE_PACK;ARQUITECTURA;PROCESADOR;MEMORIA;FABRICANTE;MODELO;NUMERO_SERIE;PANELOP;LIBRETAS;INGRESADOR;CONTACTLESS;MASTER\n");
+			if (evento.getSource() == getBotonStart()) {
+				
+				/*TODO: este bw no se cierra, 
+				 * deberia cerrarlo cuando hayan terminado todos los hilos,
+				 * si lo cierras ahora los hilos no podrán escribir
+				 */
+				bw = new BufferedWriter(new FileWriter(urlFinal));
+				bw.write(CABECERA_CSV);
 
-					// tb Habilitamos el imprimir la consola
+				// tb Habilitamos el imprimir la consola
 				display.setText("");
 				Utils.salidaTextarea(display);
-					if (radioTxt.isSelected()) {
-						//cargamos cajeros del txt
-						cajerosInt = Cajero.cargaTxtCajeros(URLCajeros);
-						
-					} else {
-						// O bien cargamos todos los cajeros de bbdd
-						cajerosInt = Utils.cargaDBCajeros("where 0=0");
-					}
+				
+				List<Cajero> cajeros = new ArrayList<Cajero>();
+				
+				if (radioTxt.isSelected()) {
+					//cargamos cajeros del txt
+					cajeros.addAll(Cajero.cargaTxtCajeros(urlCajeros));
 					
-					for (int i = 1; i <= numeroHilos; i++) {
-						Worker w  = new Worker(numeroHilos,i);
-						w.jProgressBar1 = jProgressBar;
-						w.evento = evento;
-						w.interfazPing = this;
-						w.cajeros = cajerosInt;
-						w.URLFinal = URLFinal;
-						Worker.bw = this.bw;
-						Thread t2 = new Thread(w);
-						t2.start();
-					}
-					System.out.println("Nº de Cajeros cargados: " + cajerosInt.size());
+				} else {
+					// O bien cargamos todos los cajeros de bbdd
+					cajeros.addAll(Utils.cargaDBCajeros("where 0=0"));
 				}
+				
+				System.out.println("Nº de Cajeros cargados: " + cajeros.size());
+				for (int i = 1; i <= numeroHilos; i++) {
+					new Worker(evento, cajeros, this, numeroHilos, i, urlFinal, bw)
+						.run();
+				}
+
+			}
 
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(null, "Fichero no encontrado", "Error", 2);
@@ -290,11 +301,87 @@ public class InterfazPing extends JFrame implements ActionListener {
 		}
 	}
 
-	public static void main(String args[]) {
-		InterfazPing formulario = new InterfazPing();
-		formulario.setBounds(0, 0, 320, 555);
-		formulario.setResizable(false);
-		formulario.setVisible(true);
-		formulario.setLocationRelativeTo(null);
+
+
+	public JButton getBotonStart() {
+		return botonStart;
+	}
+
+
+
+	public void setBotonStart(JButton botonStart) {
+		this.botonStart = botonStart;
+	}
+
+
+
+	public JProgressBar getjProgressBar() {
+		return jProgressBar;
+	}
+
+
+
+	public void setjProgressBar(JProgressBar jProgressBar) {
+		this.jProgressBar = jProgressBar;
+	}
+
+
+
+	public JFormattedTextField getPingTime() {
+		return PingTime;
+	}
+
+
+
+	public void setPingTime(JFormattedTextField pingTime) {
+		PingTime = pingTime;
+	}
+
+
+
+	public JCheckBox getCheckEncendidos() {
+		return checkEncendidos;
+	}
+
+
+
+	public void setCheckEncendidos(JCheckBox checkEncendidos) {
+		this.checkEncendidos = checkEncendidos;
+	}
+
+
+
+	public JRadioButton getRadioFichero() {
+		return radioFichero;
+	}
+
+
+
+	public void setRadioFichero(JRadioButton radioFichero) {
+		this.radioFichero = radioFichero;
+	}
+
+
+
+	public JRadioButton getRadioInformacion() {
+		return radioInformacion;
+	}
+
+
+
+	public void setRadioInformacion(JRadioButton radioInformacion) {
+		this.radioInformacion = radioInformacion;
+	}
+
+
+
+	public JCheckBox getCheckApagados() {
+		return checkApagados;
+	}
+
+
+
+	public void setCheckApagados(JCheckBox checkApagados) {
+		this.checkApagados = checkApagados;
 	}
 }

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JOptionPane;
-import javax.swing.JProgressBar;
 
 import front.InterfazPing;
 import modelo.Cajero;
@@ -19,62 +18,70 @@ import modelo.Cajero;
  * @author U029903
  *
  */
-public class Worker implements Runnable {
-	public JProgressBar jProgressBar1;
-	public ActionEvent evento;
-	public List<Cajero> cajeros;
-	public InterfazPing interfazPing;
-	public int maxHilos;
-	public int numHilo;
-	public String URLFinal;
-	public static int cajerosTratados;
-	public static BufferedWriter bw;
-	static int posicion = 1;
-	private int contbad = 0;
+public class Worker extends Thread {
+	
+	private static final String PROP_OK = " Encendido";
+	private static final String ERROR_CSV = ";ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR";
+	private static final String ENCENDIDO_CSV = ";ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO";
+	private static final String APAGADO_CSV = ";APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO";
 
-	private List<String> resultadoBw;
-	private List<String> resultadoSyso;
-	static boolean flagEnUso = false;
-	private static String PROP_OK = " Encendido";
+	private static int cajerosTratados;
+	private static int posicion = 1;
+	private static boolean flagEnUso = false;
 
-	public Worker(int maxHilos, int numHilo) {
+	private ActionEvent evento;
+	private List<Cajero> cajeros;
+	private InterfazPing interfazPing;
+	private int maxHilos;
+	private int numHilo;
+	private String urlFinal;
+	private BufferedWriter bw;
+
+	public Worker(ActionEvent evento, List<Cajero> cajeros, InterfazPing interfazPing, int maxHilos, int numHilo,
+			String urlFinal, BufferedWriter bw) {
 		super();
+		this.evento = evento;
+		this.cajeros = cajeros;
+		this.interfazPing = interfazPing;
 		this.maxHilos = maxHilos;
 		this.numHilo = numHilo;
-		cajeros = null;
+		this.urlFinal = urlFinal;
+		this.bw = bw;
 	}
 
+	@Override
 	public synchronized void run() {
 		int maxCajeros = 0;
 		int fraccionCajeros = 0;
-		resultadoBw = new ArrayList<String>();
-		resultadoSyso = new ArrayList<String>();
+		int contbad = 0;
+		List<String> resultadoBw = new ArrayList<String>();
+		List<String> resultadoSyso = new ArrayList<String>();
 
-		if (evento.getSource() == interfazPing.botonStart) {
+		if (evento.getSource() == interfazPing.getBotonStart()) {
 			try {
+				
 				// fraccionamos el arraylist maxHilos veces
 				maxCajeros = cajeros.size();
-				fraccionCajeros = (int) Math.floorDiv(cajeros.size(), maxHilos);
-				int restoCajeros = Math.floorMod(cajeros.size(), maxHilos);
-
+				fraccionCajeros = (int) Math.floorDiv(maxCajeros, maxHilos);
+				int restoCajeros = Math.floorMod(maxCajeros, maxHilos);
+				int index = (numHilo) * fraccionCajeros;
 				// Si la división no es exacta los cajeros del resto van al último hilo
 				if (numHilo == maxHilos && restoCajeros != 0) {
-					restoCajeros = Math.floorMod(cajeros.size(), maxHilos) * maxHilos;
-					cajeros = cajeros.subList((numHilo - 1) * fraccionCajeros, maxCajeros);
-				} else {
-					cajeros = cajeros.subList((numHilo - 1) * fraccionCajeros, (numHilo) * fraccionCajeros);
+					restoCajeros *= maxHilos;
+					index = maxCajeros;
 				}
-				for (Cajero c : cajeros) {
+				cajeros = cajeros.subList((numHilo - 1) * fraccionCajeros, index);
+				
+				for (Cajero cajero : cajeros) {
 					posicion++;
-					jProgressBar1.setValue((int) Math.floor(((double) posicion / maxCajeros) * 100));
-					String ipCajero = c.getIp();
-					if (Utils.comprobarIp(c,
-							Integer.parseInt(interfazPing.PingTime.getText().replace(".", "").replace(",", "")))) {
-
-						if (interfazPing.checkEncendidos.isSelected()) {
+					interfazPing.getjProgressBar().setValue((int) Math.floor(((double) posicion / maxCajeros) * 100));
+					String ipCajero = cajero.getIp();
+					if (Utils.comprobarIp(cajero,
+							Integer.parseInt(interfazPing.getPingTime().getText().replace(".", "").replace(",", "")))) {
+						if (interfazPing.getCheckEncendidos().isSelected()) {
 							resultadoSyso.add(ipCajero + PROP_OK);
-							if (interfazPing.radioFichero.isSelected()) {
-								if (Utils.comprobarDatosFichero(c)) {
+							if (interfazPing.getRadioFichero().isSelected()) {
+								if (Utils.comprobarDatosFichero(cajero)) {
 									resultadoSyso.add(ipCajero + ";SP3;");
 									resultadoBw.add(ipCajero + ";SP3;");
 								} else {
@@ -83,29 +90,25 @@ public class Worker implements Runnable {
 								}
 								resultadoSyso.add(" \n ----------------------- \n");
 								resultadoBw.add("");
-							} else if (interfazPing.radioInformacion.isSelected()) {
+							} else if (interfazPing.getRadioInformacion().isSelected()) {
 								try {
 									// formateamos a CSV
-									Utils.formateaCsv(resultadoBw, resultadoSyso, c);
+									Utils.formateaCsv(resultadoBw, resultadoSyso, cajero);
 								} catch (NullPointerException e) {
-									;
 									resultadoSyso.add("Cajero inestable, no se tratarán sus datos");
-									resultadoBw.add(
-											"ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR;ERROR");
+									resultadoBw.add(ERROR_CSV);
 								}
 								resultadoSyso.add(" \n ----------------------- \n");
 								resultadoBw.add("");
 							} else {
-								resultadoBw.add(ipCajero
-										+ ";ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO;ENCENDIDO");
+								resultadoBw.add(ipCajero+ ENCENDIDO_CSV);
 							}
 							resultadoSyso.add(" \n");
 						}
 					} else {
-						if (interfazPing.checkApagados.isSelected()) {
+						if (interfazPing.getCheckApagados().isSelected()) {
 							contbad++;
-							resultadoBw.add(ipCajero
-									+ ";APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO;APAGADO");
+							resultadoBw.add(ipCajero+ APAGADO_CSV);
 							resultadoSyso.add(" \n");
 						}
 					}
@@ -114,7 +117,7 @@ public class Worker implements Runnable {
 
 					while (flagEnUso) {
 						// te duermes un segundo y vuelves a intentarlo
-						Thread.sleep(1000);
+						sleep(1000);
 					}
 
 					flagEnUso = true;
@@ -133,12 +136,12 @@ public class Worker implements Runnable {
 				cajerosTratados = cajerosTratados + fraccionCajeros;
 
 				// si no han terminado todos los hilos esperamos.
-				if (cajerosTratados + restoCajeros < maxCajeros || jProgressBar1.getValue() != 100) {
+				if (cajerosTratados + restoCajeros < maxCajeros || interfazPing.getjProgressBar().getValue() != 100) {
 					wait();
 				} else {
 					notifyAll();
 					System.out.println(contbad + " Cajeros caídos");
-					Runtime.getRuntime().exec("explorer.exe /select," + URLFinal);
+					Runtime.getRuntime().exec("explorer.exe /select," + urlFinal);
 					bw.close();
 				}
 

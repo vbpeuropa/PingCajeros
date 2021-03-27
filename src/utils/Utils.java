@@ -252,7 +252,7 @@ public class Utils {
 		}
 	}
 
-	public static ArrayList<Cajero> cargaDBCajeros(String filtro) throws ClassNotFoundException, SQLException {
+	public static List<Cajero> cargaDBCajeros(String filtro) throws ClassNotFoundException, SQLException {
 		// Creamos una conexion, probablemente debería pedir las credenciales al
 		// principio
 		CDB conn = new CDB(USER, PASSWORD);
@@ -260,18 +260,16 @@ public class Utils {
 		ResultSet rs = conn.ejecutarSelect(IDCAJERO_QUERY + filtro);
 		// metadata para sacar nombres de los cajeros btw
 		// ResultSetMetaData rsmd = rs.getMetaData();
-		Stream.Builder<Cajero> builder = Stream.builder();
+		
+		List<Cajero> cajeros = new ArrayList<Cajero>();
 
 		while (rs.next()) {
-			Cajero c = new Cajero(rs.getString("TERMINALES"));
-			builder.add(c);
+			cajeros.add(new Cajero(rs.getString("TERMINALES")));
 		}
 		rs.close();
 		conn.cerrarConexion();
 
-		return (ArrayList<Cajero>) builder.build().collect(Collectors.toList());
-		// Muestra todos los cajeros cargados
-		// cajeros.map(p -> p.getIp()).forEach(System.out::println)
+		return cajeros;
 	}
 
 	/**
